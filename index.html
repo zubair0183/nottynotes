@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login / Signup - NottyNotes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
+    }
+
+    .card {
+      position: relative;
+      height: 480px;
+      width: 100%;
+      max-width: 400px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2rem;
+      border-radius: 0;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    .switch-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .switch-buttons button {
+      width: 48%;
+      padding: 0.5rem;
+      border: 1px solid #00c9ff;
+      background: transparent;
+      color: #00e3ff;
+      border-radius: 0.5rem;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+
+    .switch-buttons button:hover {
+      background-color: #00e3ff;
+      color: #000;
+    }
+
+    .form-box {
+      transition: all 0.3s ease;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    input {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
+      padding: 2rem;
+      width: 100%;
+      margin-bottom: 0.5rem;
+      border-radius: 0rem;
+      color: white;
+      text-align: center;
+      font-size: 1.5rem;
+      transition: border 0.3s;
+    }
+
+    input:focus {
+      outline: none;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .action-btn {
+      background: linear-gradient(45deg, #00e3ff, #00c9ff);
+      padding: 0.75rem;
+      width: 100%;
+      border-radius: 0.5rem;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      margin-top: 1rem;
+    }
+
+    .action-btn:hover {
+      box-shadow: 0 0 10px #00e3ff;
+    }
+
+    .error-msg {
+      font-size: 0.9rem;
+      color: #ff6666;
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .input-error {
+      border: 2px solid red !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="switch-buttons">
+      <button id="loginBtn">Login</button>
+      <button id="signupBtn">Signup</button>
+    </div>
+
+    <!-- Login Form -->
+    <div class="form-box" id="loginForm">
+      <h2 class="text-3xl font-bold text-center mb-4 text-[#aeefff] drop-shadow-[0_0_5px_#aeefff]">Log-in</h2>
+      <div id="loginError" class="error-msg"></div>
+      <input type="email" id="loginEmail" placeholder="Email" />
+      <input type="password" id="loginPassword" placeholder="Password" />
+      <button class="action-btn" id="loginSubmit">Log-in</button>
+    </div>
+
+    <!-- Signup Form -->
+    <div class="form-box hidden" id="signupForm">
+      <h2 class="text-3xl font-bold text-center mb-4 text-[#aeefff] drop-shadow-[0_0_5px_#aeefff]">Sign-up</h2>
+      <div id="signupError" class="error-msg"></div>
+      <input type="email" id="signupEmail" placeholder="Email" />
+      <input type="password" id="signupPassword" placeholder="Password" />
+      <button class="action-btn" id="signupSubmit">Signup</button>
+    </div>
+  </div>
+
+  <!-- Firebase and Auth JS -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAxIzPLxqCzkNrjUr19MohwfE0qbuqNYMo",
+      authDomain: "nottynotes.firebaseapp.com",
+      projectId: "nottynotes",
+      storageBucket: "nottynotes.appspot.com",
+      messagingSenderId: "497999718664",
+      appId: "1:497999718664:web:8eee6875217cdc696164bd",
+      measurementId: "G-XNTECT2E7Z"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // UI Switching
+    const loginBtn = document.getElementById("loginBtn");
+    const signupBtn = document.getElementById("signupBtn");
+    const loginForm = document.getElementById("loginForm");
+    const signupForm = document.getElementById("signupForm");
+
+    loginBtn.onclick = () => {
+      loginForm.classList.remove("hidden");
+      signupForm.classList.add("hidden");
+    };
+
+    signupBtn.onclick = () => {
+      signupForm.classList.remove("hidden");
+      loginForm.classList.add("hidden");
+    };
+
+    function validatePassword(password) {
+      const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{12,16}$/;
+      return pattern.test(password);
+    }
+
+    function showError(inputId, errorId, message) {
+      document.getElementById(inputId).classList.add("input-error");
+      document.getElementById(errorId).innerText = message;
+    }
+
+    function clearError(inputId, errorId) {
+      document.getElementById(inputId).classList.remove("input-error");
+      document.getElementById(errorId).innerText = "";
+    }
+
+    // Login
+    document.getElementById("loginSubmit").addEventListener("click", async () => {
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+
+      if (!validatePassword(password)) {
+        showError("loginPassword", "loginError", "Password must be 12–16 characters, include 1 uppercase, 1 lowercase, and 1 symbol.");
+        return;
+      }
+      clearError("loginPassword", "loginError");
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        alert("✅ Login successful!");
+        window.location.href = "home.html";
+      } catch (error) {
+        showError("loginPassword", "loginError", error.message);
+      }
+    });
+
+    // Signup
+    document.getElementById("signupSubmit").addEventListener("click", async () => {
+      const email = document.getElementById("signupEmail").value;
+      const password = document.getElementById("signupPassword").value;
+
+      if (!validatePassword(password)) {
+        showError("signupPassword", "signupError", "Password must be 12–16 characters, include 1 uppercase, 1 lowercase, and 1 symbol.");
+        return;
+      }
+      clearError("signupPassword", "signupError");
+
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        alert("✅ Signup successful!");
+        window.location.href = "home.html";
+      } catch (error) {
+        showError("signupPassword", "signupError", error.message);
+      }
+    });
+  </script>
+</body>
+</html>
